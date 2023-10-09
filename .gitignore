@@ -1,0 +1,7 @@
+.git
+.quarto
+_freeze
+_output
+.pytest_cache
+env
+_data_analysis_files

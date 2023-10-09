@@ -1,0 +1,260 @@
+---
+execute:
+  echo: false
+  daemon: true
+jupyter: python3
+---
+
+```{python}
+# Extract Google Form data
+
+import pandas as pd
+
+def build_sheet_url(doc_id, sheet_id):
+    return f'https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={sheet_id}'
+
+doc_id = '12tKDMK9E6dvlTWC7QjwXldbV-W2ijflw0LbUoJ3jXE0'
+sheet_id = '480847614'
+sheet_url = build_sheet_url(doc_id, sheet_id)
+df = pd.read_csv(sheet_url)
+file_path = 'rawdata/COPHYworkflows.csv'
+df.to_csv(file_path)
+
+```
+
+```{python}
+# Preprocess the data
+
+df['How many hours per worked week have you spent writing papers, proposals or reports in the last 6 months, on average? '] = df['How many hours per worked week have you spent writing papers, proposals or reports in the last 6 months, on average? '].replace(
+    {'Less than 30 minutes per weak':'< 0.5h',
+     'Between 30 minutes and 2 hours per week':'0.5 to 2h',
+     'Between 2 hours and 8 hours': '2 to 8h',
+     'Between 8 hours and 16 hours': '8 to 16h',
+     'Between 16 hours and 24 hours':'16 to 24h',
+     'More than 24 hours':'> 24h'})
+
+df['How many hours per worked week have you spent writing code in the last 6 months, on average?'] = df['How many hours per worked week have you spent writing code in the last 6 months, on average?'].replace(
+    {'Less than 30 minutes per weak':'< 0.5h',
+     'Between 30 minutes and 2 hours per week':'0.5 to 2h',
+     'Between 2 hours and 8 hours': '2 to 8h',
+     'Between 8 hours and 16 hours': '8 to 16h',
+     'Between 16 hours and 24 hours':'16 to 24h',
+     'More than 24 hours':'> 24h'})
+
+writingTime=df['How many hours per worked week have you spent writing papers, proposals or reports in the last 6 months, on average? ']
+
+refManager='Which reference manager do you use, mainly?'
+changeManager="If you don't use it already, would you consider to change your reference manager and move to Zotero?"
+df=df.rename(columns={refManager: "Manager", changeManager: "Willing to change"})
+
+df.columns = [x.replace("\n", " ") for x in df.columns.to_list()]
+codeEditor='Which code editor(s) do you use? Multiple answers are possible'
+df=df.rename(columns={codeEditor: "codeEditor"})
+useGit='Regarding Git-based version control  (e.g. Github, Gitlab, Bitbucket, etc)'
+df=df.rename(columns={useGit: "useGit"})
+
+
+df['useGit'] = df['useGit'].replace(
+    {'You never (or almost never) use Git':'No',
+     'You have your own Git repositories: you add, commit, push and pull!':'Yes',
+     'You mostly clone the Git repositories of others': 'No'})
+
+print(df.columns)
+responsesTimeSpent=['< 0.5h',
+    '0.5 to 2h',
+    '2 to 8h',
+    '8 to 16h',
+    '16 to 24h',
+    '> 24h']
+
+respWriting=[]
+for resp in writingTime:
+    respWriting.append(responsesTimeSpent.index(resp))
+
+codingTime=df['How many hours per worked week have you spent writing code in the last 6 months, on average?']
+
+respCoding=[]
+for resp in codingTime:
+    respCoding.append(responsesTimeSpent.index(resp))
+
+collaborativeHappiness=df['How happy are you about the collaborative process when it comes to writing or coding with colleagues']
+
+workflowHappiness=df['How happy are you about the way your workflows are organized when you are on the computer?']
+
+```
+
+```{python}
+# plot coding time
+import numpy as np
+import patchworklib as pw
+
+from plotnine import *
+
+happinessValues=np.append(collaborativeHappiness.values,workflowHappiness.values)
+collabLabel=np.chararray((len(collaborativeHappiness.values), 1),50)
+workflowLabel=np.chararray((len(workflowHappiness.values), 1),50)
+collabLabel[:]='collaboration'
+workflowLabel[:]='workflow'
+happinessLabels=np.append(collabLabel,workflowLabel)
+dict_of_arrs = {"Item": happinessLabels, "Happiness": happinessValues}
+dfPlot = pd.DataFrame(dict_of_arrs)
+dfPlot['Item'] = dfPlot['Item'].str.decode('utf-8') 
+
+```
+
+```{python}
+g = (
+    ggplot(df, aes(x = "Manager", y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g11 = pw.load_ggplot(g, figsize=(2,2))
+g11.savefig("figures/refManager.svg")
+g11.savefig("figures/refManager.png")
+
+```
+
+```{python}
+#| label: fig-1panelA
+#| fig-cap: "A"
+df = df.replace(np.nan, 'Zotero!', regex=True)
+g = (
+    ggplot(df, aes(x = "Willing to change", y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g12 = pw.load_ggplot(g, figsize=(2,2))
+g12.savefig("figures/changeManager.svg")
+g12.savefig("figures/changeManager.png")
+
+```
+
+```{python}
+gManager = (g11|g12)
+gManager.savefig("refManagement.svg")
+gManager.savefig("refManagement.png")
+
+
+```
+
+```{python}
+g = (
+    ggplot(dfPlot, aes(x = 'happinessValues', y = after_stat('count'), fill = 'Item'))
+    + stat_bin(binwidth = 1, position='dodge')
+    + xlim(1,5)
+    + scale_fill_manual(values=['SandyBrown', 'Purple'])
+    + theme_classic()
+)
+
+g1 = pw.load_ggplot(g, figsize=(4,2))
+g1.savefig("figures/happiness.svg")
+g1.savefig("figures/happiness.png")
+
+```
+
+```{python}
+#| label: fig-1panelB
+#| fig-cap: "B"
+
+g = (
+    ggplot(df, aes(x = 'writingTime', y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + scale_x_discrete(limits=responsesTimeSpent)
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g2 = pw.load_ggplot(g, figsize=(2,2))
+g2.savefig("figures/writingTime.svg")
+g2.savefig("figures/writingTime.png")
+
+
+```
+
+```{python}
+#| label: fig-panelC
+#| fig-cap: "C"
+#| 
+g= (
+    ggplot(df, aes(x = 'codingTime', y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + scale_x_discrete(limits=responsesTimeSpent)
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g3 = pw.load_ggplot(g, figsize=(2,2))
+g3.savefig("figures/codingTime.svg")
+g3.savefig("figures/codingTime.png")
+
+
+```
+
+```{python}
+g12 = g1/(g2|g3)
+g12.savefig("happiness_timespent.svg")
+g12.savefig("happiness_timespent.png")
+
+g23 = (g2|g3)
+g23.savefig("timespent.png")
+
+
+```
+
+```{python}
+g = (
+    ggplot(df, aes(x = "codeEditor", y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g31 = pw.load_ggplot(g, figsize=(2,2))
+g31.savefig("figures/codeEditor.svg")
+g31.savefig("figures/codeEditor.png")
+
+```
+
+```{python}
+g = (
+    ggplot(df, aes(x = "useGit", y = after_stat('count')))
+    + stat_bin(binwidth = 1)
+    + scale_fill_manual(values=['Purple'])
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g32 = pw.load_ggplot(g, figsize=(2,2))
+g32.savefig("figures/useGit.svg")
+g32.savefig("figures/useGit.png")
+
+```
+
+```{python}
+
+gGitCode = (g31|g32)
+gGitCode.savefig("GitEditor.png")
+gGitCode.savefig("GitEditor.svg")
+
+
+```
+
+```{python}
+
+
+df["useVScode"]= df["codeEditor"].str.find("Visual Code")>-1
+
+g = (
+    ggplot(df, aes(x = "useGit", y = "useVScode"))
+    + geom_bin_2d(position='identity', binwidth = 1)
+    + theme_classic() + theme(axis_text_x=element_text(angle=25,hjust = 1))
+)
+
+g33 = pw.load_ggplot(g, figsize=(2,2))
+g33.savefig("figures/crossGitVS.svg")
+g33.savefig("figures/crossGitVS.png")
+
+```

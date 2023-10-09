@@ -1,0 +1,18 @@
+project:
+  title: "Labmeeting"
+  type: default
+  output-dir: _output
+  
+
+default: 
+  author: "Romain Ligneul"
+  chapters:
+    - Labmeeting.qmd
+
+execute:
+  freeze: auto
+
+
+
+
+
