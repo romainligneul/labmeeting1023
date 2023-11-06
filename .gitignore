@@ -5,3 +5,5 @@ _output
 .pytest_cache
 env
 _data_analysis_files
+
+/.quarto/

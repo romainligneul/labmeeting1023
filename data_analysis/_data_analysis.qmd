@@ -258,3 +258,12 @@ g33.savefig("figures/crossGitVS.svg")
 g33.savefig("figures/crossGitVS.png")
 
 ```
+
+```{python}
+#| echo: false
+radius = 10
+from IPython.display import display, Markdown
+display(Markdown("""
+The radius of the circle is {radius}.
+""".format(radius = radius)))
+```

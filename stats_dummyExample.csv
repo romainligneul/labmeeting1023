@@ -1,0 +1,3 @@
+effectName,mean,std,lowCI,highCI,stat,effectSize,df1,df2,pvalue
+groupdiff,12.3,5.1,3.8,18.4,t,4.38,34,,0.0041
+anovaInteraction,,,,,F,0.66,4,22,0.000001

@@ -1,0 +1,57 @@
+---
+author: Romain Ligneul
+execute:
+  daemon: true
+  echo: false
+  output: false
+editor:
+    render-on-save: true
+---
+
+```{ojs}
+//| output: false
+//| echo: false
+  data = await FileAttachment("stats_dummyExample.csv").csv({typed: true});
+  getFields=function(){
+    var availData=[];
+      for (var i = 0; i <= data.length - 1; i++) {
+        //availData+=' ' + data[i]['effectName'] + ','´
+        availData.push(data[i]['effectName'])
+      }
+      
+      return availData//availData.slice(0,-1)
+  }
+  getStats=function(targetEffect, printCI="false"){
+    var outputStr ='('
+    var effectdata
+      for (var i = 0; i <= data.length - 1; i++) {
+        if (data[i]['effectName']==targetEffect){
+          effectdata= data[i];
+        }
+      }
+    if (effectdata['pvalue'].toFixed(3)[-1]=='0'){
+      var pvalStr=", p="+ effectdata['pvalue'].toFixed(3);
+    } else {
+      var pvalStr=", p<0.001";
+    }
+    if ((printCI=="true") && effectdata['lowCI']!==null  && effectdata['highCI']!==null){
+      var ciStr=", CI " + effectdata['lowCI'].toFixed(2) + '-' + effectdata['highCI'].toFixed(2);
+    } else {
+      var ciStr="";
+    }
+    if (effectdata['stat']=='t'){
+      outputStr+='t(' + effectdata['df1'] +  ')=' + effectdata['effectSize'] + pvalStr
+        
+    } else if (effectdata['stat']=='F'){
+      outputStr+='F(' + effectdata['df1'] +  ',' + effectdata['df2'] + ')=' + effectdata['effectSize'].toFixed(1) + pvalStr;
+    }
+    outputStr += ciStr + ')';
+    return outputStr
+  }
+  'Input data'
+  data
+  'Effects available in this csv file'
+  fields=getFields()
+  fields
+  'To deactivate these messages, just set output: false in the header'
+```
