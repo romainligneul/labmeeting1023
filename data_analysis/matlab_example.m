@@ -26,3 +26,16 @@ fid = fopen([folder_stats_json '\' testname '.json'],'w');
 fprintf(fid,'%s',encodedStats);
 fclose(fid);
 
+%% anova example 2
+clear test
+load hogg
+hogg
+[test.p,tbl,test.stats] = anova1(hogg,[],'off');
+
+% save the test as json
+testname='anova_hogg3';
+encodedStats=jsonencode(test);
+fid = fopen([folder_stats_json '\' testname '.json'],'w');
+fprintf(fid,'%s',encodedStats);
+fclose(fid);
+

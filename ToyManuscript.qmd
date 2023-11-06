@@ -110,10 +110,11 @@ Since we may have various ttests saved, it would be cool to just automatically d
 ```{ojs}
 //| output: true
 //| echo: true
+
 d3 = require("d3")
-async function ttest(testname) {
+async function Ttest(ttestname) {
     var pathPrefix="data_analysis/stats/ttest_"
-    var pathFile=pathPrefix+testname+".json"
+    var pathFile=pathPrefix+ttestname+".json"
     var tstats = await d3.json(pathFile)
     var outputStr='(t('+ tstats["stats"]["df"] + ')=' + tstats["stats"]["tstat"].toFixed(2) + ", " + "p=" + tstats["p"].toFixed(4) + ", CI["+tstats["ci"][0].toFixed(2)+','+tstats["ci"][1].toFixed(2)+'])'    
     return outputStr
@@ -123,10 +124,42 @@ async function ttest(testname) {
 
 Now, we can write down even more information in a super compact and reliable manner by simply writing down:
 ```
-\${await ttest("stock")}
+\${await Ttest("stock")}
 ```
-A beautiful parenthesis is created by typing this tiny formula: \${await ttest("stock")}
+A beautiful parenthesis is created by typing this tiny formula: \${await Ttest("stock")}
 
-Now, we have an efficient method that can be easily extended to report various statistical analyses coming from Matlab.
+Now, we have an efficient method that can be easily extended to report various statistical analyses coming from Matlab. We can do a function to report anova results.
 
-For example, we can write 
+```{ojs}
+//| output: true
+//| echo: true
+async function Ftest(ftestname) {
+    var pathPrefix2="data_analysis/stats/anova_"
+    var pathFile2=pathPrefix2+ftestname+".json"
+    var fstats
+    await d3.json(pathFile2).then(function(data){
+      fstats = data.p
+    })
+    return fstats
+
+    //var fstats = await d3.json(pathFile)
+    //const fstats = require("data_analysis/stats/anova_hogg.json");
+    /*
+    var outputStr='(F('+ fstats["stats"]["df"] + ')=' + tstats["stats"]["tstat"].toFixed(2) + ", " + "p=" + tstats["p"].toFixed(4) + ", CI["+tstats["ci"][0].toFixed(2)+','+tstats["ci"][1].toFixed(2)+'])'  
+    */  
+   /*
+   var outputStr
+      await fetch("./data_analysis/stats/anova_hogg.json")
+      .then(response => response.json())
+      .then(function(fstats){
+        outputStr=fstats.tbl
+        })
+      .catch(error => console.log(error));
+    return outputStr
+    */
+}
+//fstats2=d3.json("data_analysis/stats/anova_hogg.json")
+
+```
+
+Here \${await Ftest("hogg3")}
